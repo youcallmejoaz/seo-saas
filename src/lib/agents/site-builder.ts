@@ -78,6 +78,18 @@ export function normalisePlan(plan: SitePlan): SitePlan {
     seen.add(slug);
     pages.push({ ...p, slug });
   }
+  // One page per target keyword: duplicates would compete with each other in Google.
+  const keywords = new Set<string>();
+  for (const p of pages) {
+    const kw = p.target_keyword.toLowerCase().trim();
+    if (!kw) continue;
+    if (keywords.has(kw)) {
+      const qualifier = (p.type === "location" ? "areas" : p.service ?? p.slug.split("/").pop() ?? "").toLowerCase();
+      const alt = `${kw} ${qualifier}`.trim();
+      p.target_keyword = qualifier && !keywords.has(alt) ? alt : "";
+    }
+    if (p.target_keyword) keywords.add(p.target_keyword.toLowerCase().trim());
+  }
   const ensure = (type: PagePlan["type"], slug: string, title: string) => {
     if (!pages.some((p) => p.type === type))
       pages.push({ slug, type, title, h1: title, meta_description: `${title}. Get in touch today to find out how we can help you.`, target_keyword: "", brief: "" });

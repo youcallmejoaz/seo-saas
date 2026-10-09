@@ -38,7 +38,8 @@ export function mockSitePlan(b: BusinessInfo, maxCombos: number): SitePlan {
       brief: `Explain our ${lc(s)} service.`,
     });
   }
-  for (const l of b.locations) {
+  // The home page already targets the primary location, so area pages cover the rest.
+  for (const l of b.locations.slice(1)) {
     pages.push({
       slug: `areas/${slugify(l)}`,
       type: "location",

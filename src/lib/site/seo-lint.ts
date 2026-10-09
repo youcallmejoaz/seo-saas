@@ -79,6 +79,16 @@ export function lintSite(pages: PageState[]): LintIssue[] {
     if (internalLinks(p).length === 0 && p.type !== "contact") add(p, "no_outlinks", "notice", "Page has no internal links.", true);
   }
 
+  const byKeyword = new Map<string, PageState[]>();
+  for (const p of live) {
+    const kw = p.target_keyword?.toLowerCase().trim();
+    if (kw) byKeyword.set(kw, [...(byKeyword.get(kw) ?? []), p]);
+  }
+  for (const [kw, group] of byKeyword)
+    if (group.length > 1)
+      for (const p of group.slice(1))
+        add(p, "keyword_cannibalisation", "warning", `Targets "${kw}", which ${pathForSlug(group[0]!.slug)} also targets; the pages will compete.`);
+
   for (const [, group] of titles) if (group.length > 1) for (const p of group) add(p, "duplicate_title", "warning", "Title is shared with another page.", true);
   for (const [, group] of h1s) if (group.length > 1) for (const p of group) add(p, "duplicate_h1", "notice", "H1 is shared with another page.", true);
 

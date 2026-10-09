@@ -4,7 +4,7 @@
 set -euo pipefail
 PGBIN="${PGBIN:-$(ls -d /usr/lib/postgresql/*/bin 2>/dev/null | sort -V | tail -1)}"
 DATA="${PGDATA_DIR:-${TMPDIR:-/tmp}/seo-saas-pgdata}"
-PORT="${PGPORT:-54329}"
+PORT="${PGPORT:-54339}"
 # Postgres refuses to run as root; drop to the `postgres` system user when needed.
 AS=()
 if [ "$(id -u)" = "0" ]; then AS=(runuser -u postgres --); fi
@@ -13,10 +13,9 @@ if [ ! -d "$DATA" ]; then
   if [ "$(id -u)" = "0" ]; then chown postgres "$DATA"; fi
   "${AS[@]}" "$PGBIN/initdb" -D "$DATA" -U postgres --auth=trust >/dev/null
 fi
-if ! "${AS[@]}" "$PGBIN/pg_ctl" -D "$DATA" status >/dev/null 2>&1; then
-  "${AS[@]}" "$PGBIN/pg_ctl" -D "$DATA" -o "-p $PORT -k /tmp" -l "$DATA/log" start >/dev/null
-  sleep 1
-fi
+# (Re)start so the cluster always listens on $PORT.
+"${AS[@]}" "$PGBIN/pg_ctl" -D "$DATA" stop >/dev/null 2>&1 || true
+"${AS[@]}" "$PGBIN/pg_ctl" -D "$DATA" -o "-p $PORT -k /tmp" -l "$DATA/log" -w start >/dev/null
 export PGHOST=/tmp PGPORT="$PORT" PGUSER=postgres
 psql -q -d postgres -c "drop database if exists seo_saas_test" -c "create database seo_saas_test"
 psql -q -v ON_ERROR_STOP=1 -d seo_saas_test -f tests/db/supabase-stub.sql

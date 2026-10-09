@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { LeadsTable } from "@/components/dashboard/leads-table";
+import { Markdown } from "@/components/markdown";
 import { PerformanceCharts, PerformanceKpis, RankingsTable } from "@/components/dashboard/performance";
 import { Card, CardBody, CardHeader, EmptyState } from "@/components/ui";
 import { getViewer } from "@/lib/auth";
@@ -23,22 +24,6 @@ const FRIENDLY: Record<string, string> = {
   alt_text: "Described images for search engines",
   technical_fix: "Fixed technical issues",
 };
-
-function Markdownish({ md }: { md: string }) {
-  return (
-    <div className="space-y-2 text-sm text-slate-700">
-      {md.split("\n").map((line, i) =>
-        line.startsWith("## ") ? (
-          <h4 key={i} className="pt-2 font-semibold text-slate-900">{line.slice(3)}</h4>
-        ) : line.startsWith("- ") ? (
-          <p key={i} className="pl-4">• {line.slice(2).replace(/\*\*/g, "")}</p>
-        ) : line.trim() ? (
-          <p key={i}>{line.replace(/\*\*/g, "")}</p>
-        ) : null,
-      )}
-    </div>
-  );
-}
 
 export default async function PortalPage({ searchParams }: { searchParams: Promise<{ client?: string; days?: string }> }) {
   const sp = await searchParams;
@@ -119,7 +104,7 @@ export default async function PortalPage({ searchParams }: { searchParams: Promi
             {(reports ?? []).map((r) => (
               <div key={r.id}>
                 <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">{new Date(`${r.period_start}T00:00:00Z`).toLocaleString("en-GB", { month: "long", year: "numeric" })}</p>
-                <Markdownish md={r.summary_md as string} />
+                <Markdown md={r.summary_md as string} />
               </div>
             ))}
             {!reports?.length && <EmptyState title="Your first monthly summary arrives at the start of next month." />}

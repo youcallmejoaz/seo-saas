@@ -40,19 +40,39 @@ export const PAGE_COLUMNS = "id, slug, type, title, meta_description, h1, blocks
 
 export type SiteBundle = { site: Pick<Site, "id" | "client_id" | "subdomain" | "custom_domain" | "status" | "theme" | "business" | "published_at">; pages: PageState[] };
 
-/** Resolve a rewritten host key (`sub~acme` / `dom~acme.co.uk`) to its published site id. */
-export const resolveSiteKey = (key: string) =>
+export const SITE_KEYS_TAG = "site-keys";
+
+async function lookupSiteKey(key: string): Promise<string | null> {
+  const decoded = decodeURIComponent(key);
+  const [kind, value] = decoded.split("~") as [string, string];
+  const q = publicClient().from("sites").select("id").eq("status", "published");
+  const { data } = await (kind === "dom" ? q.eq("custom_domain", value) : q.eq("subdomain", value)).maybeSingle();
+  return (data?.id as string | undefined) ?? null;
+}
+
+const cachedSiteKey = (key: string) =>
   unstable_cache(
     async () => {
-      const decoded = decodeURIComponent(key);
-      const [kind, value] = decoded.split("~") as [string, string];
-      const q = publicClient().from("sites").select("id").eq("status", "published");
-      const { data } = await (kind === "dom" ? q.eq("custom_domain", value) : q.eq("subdomain", value)).maybeSingle();
-      return (data?.id as string | undefined) ?? null;
+      const id = await lookupSiteKey(key);
+      // Throwing keeps misses out of the cache, so a site is reachable the moment it publishes.
+      if (!id) throw new SiteKeyMiss();
+      return id;
     },
     ["site-key", key],
-    { revalidate: 300, tags: [`site-key:${key}`] },
+    { revalidate: 300, tags: [SITE_KEYS_TAG] },
   )();
+
+class SiteKeyMiss extends Error {}
+
+/** Resolve a rewritten host key (`sub~acme` / `dom~acme.co.uk`) to its published site id. */
+export async function resolveSiteKey(key: string): Promise<string | null> {
+  try {
+    return await cachedSiteKey(key);
+  } catch (err) {
+    if (err instanceof SiteKeyMiss) return null;
+    throw err;
+  }
+}
 
 /** Published site + all published pages, cached until the site's tag is revalidated. */
 export const loadPublishedSite = (siteId: string) =>
@@ -79,3 +99,14 @@ export const loadRedirect = (siteId: string, path: string) =>
     ["site-redirect", siteId, path],
     { revalidate: 3600, tags: [siteTag(siteId)] },
   )();
+
+/** Host key -> published site bundle, healing stale cached host mappings. */
+export async function loadSiteByKey(key: string): Promise<SiteBundle | null> {
+  const siteId = await resolveSiteKey(key);
+  if (!siteId) return null;
+  const bundle = await loadPublishedSite(siteId);
+  if (bundle) return bundle;
+  // The cached host mapping may point at a site that was since removed or re-created.
+  const fresh = await lookupSiteKey(key);
+  return fresh && fresh !== siteId ? loadPublishedSite(fresh) : null;
+}

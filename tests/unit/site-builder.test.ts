@@ -21,7 +21,7 @@ describe("site builder (mock mode)", () => {
     const log = memoryLogger();
     const plan = await planSite(log, business, null, 6);
     expect(plan.pages.filter((p) => p.type === "service")).toHaveLength(3);
-    expect(plan.pages.filter((p) => p.type === "location")).toHaveLength(3);
+    expect(plan.pages.filter((p) => p.type === "location")).toHaveLength(2);
     expect(plan.pages.some((p) => p.type === "home" && p.slug === "")).toBe(true);
 
     const contents = new Map();
@@ -42,6 +42,7 @@ describe("site builder (mock mode)", () => {
     const critical = lintSite(published).filter((i) => i.severity === "critical");
     expect(critical).toEqual([]);
     expect(lintSite(published).filter((i) => i.check === "orphan_page")).toEqual([]);
+    expect(lintSite(published).filter((i) => i.check === "keyword_cannibalisation")).toEqual([]);
     expect(log.usage.length).toBeGreaterThan(0);
   });
 
@@ -55,5 +56,7 @@ describe("site builder (mock mode)", () => {
     });
     expect(plan.pages.map((p) => p.slug)).toEqual(["emergency-plumbing", "emergency-plumbing-2", "", "contact", "about"]);
     expect(plan.theme.primary).toBe("#1d4ed8");
+    // Duplicate target keywords are disambiguated so pages don't compete.
+    expect(plan.pages[1]!.target_keyword).not.toBe(plan.pages[0]!.target_keyword);
   });
 });

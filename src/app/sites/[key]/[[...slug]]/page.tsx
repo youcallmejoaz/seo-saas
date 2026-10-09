@@ -3,16 +3,14 @@ import { notFound, permanentRedirect } from "next/navigation";
 import { SitePage } from "@/components/site/site-page";
 import { env } from "@/lib/env";
 import { siteUrl } from "@/lib/hosts";
-import { loadPublishedSite, loadRedirect, resolveSiteKey } from "@/lib/site/load";
+import { loadRedirect, loadSiteByKey } from "@/lib/site/load";
 import { pathForSlug } from "@/lib/site/schema";
 
 type Params = { params: Promise<{ key: string; slug?: string[] }> };
 
 async function resolve({ params }: Params) {
   const { key, slug } = await params;
-  const siteId = await resolveSiteKey(key);
-  if (!siteId) return null;
-  const bundle = await loadPublishedSite(siteId);
+  const bundle = await loadSiteByKey(key);
   if (!bundle) return null;
   const path = (slug ?? []).join("/");
   const page = bundle.pages.find((p) => p.slug === path) ?? null;

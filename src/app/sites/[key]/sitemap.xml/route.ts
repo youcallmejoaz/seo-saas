@@ -1,12 +1,11 @@
 import { env } from "@/lib/env";
 import { siteUrl } from "@/lib/hosts";
-import { loadPublishedSite, resolveSiteKey } from "@/lib/site/load";
+import { loadSiteByKey } from "@/lib/site/load";
 import { pathForSlug } from "@/lib/site/schema";
 
 export async function GET(_req: Request, { params }: { params: Promise<{ key: string }> }) {
   const { key } = await params;
-  const siteId = await resolveSiteKey(key);
-  const bundle = siteId ? await loadPublishedSite(siteId) : null;
+  const bundle = await loadSiteByKey(key);
   if (!bundle) return new Response("Not found", { status: 404 });
   const base = siteUrl({ ...bundle.site, domain_verified: !!bundle.site.custom_domain }, env().ROOT_DOMAIN, env().NEXT_PUBLIC_APP_URL);
   const urls = bundle.pages

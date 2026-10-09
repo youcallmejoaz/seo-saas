@@ -5,7 +5,7 @@ import { adminClient } from "@/lib/supabase/admin";
 import type { ChangeSetRow, Client, PageRow, Site } from "@/lib/db/types";
 import { decide, type PolicyDecision } from "@/lib/agents/policy";
 import { applyOps, changeOps, classifyOps, ChangeError, describeOp, type ChangeOp } from "./changes";
-import { PAGE_COLUMNS, siteTag, toPageState } from "./load";
+import { PAGE_COLUMNS, SITE_KEYS_TAG, siteTag, toPageState } from "./load";
 import type { PageState } from "./schema";
 
 // Persistence for sites and change sets (service role; callers enforce tenancy).
@@ -61,9 +61,11 @@ export async function replaceSitePages(site: Pick<Site, "id" | "client_id">, pag
   revalidateSite(site.id);
 }
 
-export function revalidateSite(siteId: string) {
+export function revalidateSite(siteId: string, opts: { hostnames?: boolean } = {}) {
   try {
     revalidateTag(siteTag(siteId));
+    // Host -> site mappings change on publish, archive and domain changes.
+    if (opts.hostnames) revalidateTag(SITE_KEYS_TAG);
   } catch {
     // Outside a Next.js request context (scripts/tests): nothing cached to invalidate.
   }
@@ -168,5 +170,5 @@ export async function publishSite(siteId: string) {
   if (pErr) throw new Error(pErr.message);
   const { error } = await db.from("sites").update({ status: "published", published_at: new Date().toISOString() }).eq("id", siteId);
   if (error) throw new Error(error.message);
-  revalidateSite(siteId);
+  revalidateSite(siteId, { hostnames: true });
 }

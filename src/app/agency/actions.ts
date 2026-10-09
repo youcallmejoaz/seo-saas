@@ -9,7 +9,7 @@ import { requireAdmin, requireStaff } from "@/lib/auth";
 import type { AutonomyPolicy, ChangeKind, ClientStatus } from "@/lib/db/types";
 import { addDomain, checkDomain } from "@/lib/integrations/vercel-domains";
 import { createRun } from "@/lib/runs";
-import { publishSite, rollbackChangeSet } from "@/lib/site/repo";
+import { publishSite, revalidateSite, rollbackChangeSet } from "@/lib/site/repo";
 import { adminClient } from "@/lib/supabase/admin";
 import { createClient } from "@/lib/supabase/server";
 import { slugify } from "@/lib/utils";
@@ -148,6 +148,7 @@ export async function setCustomDomain(clientId: string, siteId: string, formData
   if (!/^([a-z0-9-]+\.)+[a-z]{2,}$/.test(domain)) throw new Error("Enter a valid domain like example.co.uk");
   const status = await addDomain(domain);
   await adminClient().from("sites").update({ custom_domain: domain, domain_verified: status.verified }).eq("id", siteId);
+  revalidateSite(siteId, { hostnames: true });
   revalidatePath(`/agency/clients/${clientId}/site`);
 }
 
@@ -198,7 +199,8 @@ export async function setClientStatus(clientId: string, status: ClientStatus) {
     await db.from("campaigns").update({ status: "paused" }).eq("client_id", clientId).eq("status", "active");
   }
   if (status === "offboarded") {
-    await db.from("sites").update({ status: "archived" }).eq("client_id", clientId);
+    const { data: archived } = await db.from("sites").update({ status: "archived" }).eq("client_id", clientId).select("id");
+    for (const s of archived ?? []) revalidateSite(s.id as string, { hostnames: true });
   }
   revalidatePath(`/agency/clients/${clientId}`);
   revalidatePath("/agency/clients");

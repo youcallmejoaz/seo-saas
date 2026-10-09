@@ -14,8 +14,9 @@
     "test:db": "vitest run --config vitest.db.config.ts",
     "e2e": "playwright test",
     "inngest:dev": "inngest-cli dev -u http://localhost:3000/api/inngest",
-    "ai:check": "tsx scripts/ai-check.ts",
-    "db:local": "bash scripts/local-db.sh"
+    "ai:check": "tsx --conditions=react-server --env-file-if-exists=.env.local scripts/ai-check.ts",
+    "db:local": "bash scripts/local-db.sh",
+    "seed": "tsx --conditions=react-server --env-file-if-exists=.env.local scripts/seed.ts"
   },
   "dependencies": {
     "@google/genai": "^2.28.0",
@@ -47,6 +48,7 @@
     "inngest-cli": "^1.46.0",
     "pg": "^8.23.1",
     "postcss": "^8.5.29",
+    "supabase": "2.120.0",
     "tailwindcss": "^4.3.3",
     "tsx": "^4.23.15",
     "typescript": "^5.9.3",
@@ -57,7 +59,8 @@
       "esbuild",
       "inngest-cli",
       "sharp",
-      "unrs-resolver"
+      "unrs-resolver",
+      "supabase"
     ]
   }
 }

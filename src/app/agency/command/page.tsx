@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { sendCommand } from "@/app/agency/actions";
 import { RunLog } from "@/components/agency/run-log";
+import { Markdown } from "@/components/markdown";
 import { Button, Card, CardBody, CardHeader, PageHeader, Select, StatusBadge, Textarea } from "@/components/ui";
 import { requireStaff } from "@/lib/auth";
 import type { Run, RunEvent } from "@/lib/db/types";
@@ -58,7 +59,7 @@ export default async function CommandPage({ searchParams }: { searchParams: Prom
             <Card>
               <CardHeader title={current.prompt ?? "Command"} description={<StatusBadge status={current.status} />} action={<Link href={`/agency/runs/${current.id}`} className="text-sm text-brand-600">Full log →</Link>} />
               <CardBody className="space-y-4">
-                {answer && <div className="whitespace-pre-wrap rounded-lg bg-brand-50 p-4 text-sm text-slate-800">{answer}</div>}
+                {answer && <div className="rounded-lg bg-brand-50 p-4"><Markdown md={answer} /></div>}
                 <RunLog runId={current.id} initialEvents={(events ?? []) as RunEvent[]} initialStatus={current.status} />
               </CardBody>
             </Card>
