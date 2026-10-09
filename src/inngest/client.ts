@@ -5,7 +5,7 @@ type Events = {
   "site/edit.requested": { data: { runId: string; siteId: string; instruction: string } };
   "site/publish.requested": { data: { siteId: string } };
   "campaign/plan.requested": { data: { runId: string; campaignId: string } };
-  "task/execute.requested": { data: { taskId: string } };
+  "task/execute.requested": { data: { taskId: string; clientId: string } };
   "task/measure.requested": { data: { taskId: string; checkpointDays: number } };
   "change/decided": { data: { changeSetId: string; decision: "approved" | "rejected"; userId?: string | null } };
   "audit/requested": { data: { clientId: string; runId?: string } };

@@ -292,7 +292,7 @@ export async function retryTask(taskId: string) {
   const { data: task } = await supabase.from("tasks").select("id, client_id, status").eq("id", taskId).maybeSingle();
   if (!task) throw new Error("Task not found");
   await adminClient().from("tasks").update({ status: "planned", error: null, scheduled_for: new Date().toISOString() }).eq("id", taskId);
-  await inngest.send({ name: "task/execute.requested", data: { taskId } });
+  await inngest.send({ name: "task/execute.requested", data: { taskId, clientId: task.client_id as string } });
   revalidatePath("/agency/failures");
 }
 
