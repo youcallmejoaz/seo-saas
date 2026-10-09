@@ -1,3 +1,4 @@
+import { siteNavigation } from "./navigation";
 import { internalLinks, pageText, pathForSlug, wordCount, type PageState } from "./schema";
 
 export type LintSeverity = "critical" | "warning" | "notice";
@@ -40,6 +41,8 @@ export function lintSite(pages: PageState[]): LintIssue[] {
   }
 
   const slugs = new Set(live.map((p) => pathForSlug(p.slug)));
+  // Header/footer links render on every page, so they count as inbound links.
+  for (const path of siteNavigation(live).linkedPaths) inbound.set(path, (inbound.get(path) ?? 0) + 1);
 
   for (const p of live) {
     if (p.title.length < 30) add(p, "title_short", "warning", `Title is ${p.title.length} characters (aim for 30–60).`, true);

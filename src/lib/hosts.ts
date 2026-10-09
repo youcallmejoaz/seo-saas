@@ -33,3 +33,16 @@ export function siteUrl(site: { subdomain: string; custom_domain: string | null;
   if (site.custom_domain && site.domain_verified) return `https://${site.custom_domain}`;
   return `${protocol}://${site.subdomain}.${rootDomain}`;
 }
+
+/**
+ * In local development generated sites live on *.localhost, which Node cannot always
+ * resolve. Map such URLs to the equivalent internal renderer path on the app origin.
+ */
+export function fetchableUrl(url: string, rootDomain: string, appUrl: string): string {
+  const u = new URL(url);
+  const kind = classifyHost(u.host, rootDomain);
+  if (kind.kind === "site" && /localhost|127\.0\.0\.1/.test(rootDomain)) {
+    return `${appUrl.replace(/\/$/, "")}/sites/sub~${kind.subdomain}${u.pathname === "/" ? "" : u.pathname}`;
+  }
+  return url;
+}

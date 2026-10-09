@@ -1,6 +1,7 @@
 import Link from "next/link";
 import type { BusinessInfo, Theme } from "@/lib/db/types";
 import { pathForSlug, type PageState } from "@/lib/site/schema";
+import { siteNavigation } from "@/lib/site/navigation";
 import { jsonLdFor } from "@/lib/site/structured-data";
 import { BlockView } from "./blocks";
 
@@ -14,11 +15,8 @@ type Props = {
 };
 
 export function SitePage({ site, pages, page, baseUrl, linkPrefix = "", banner }: Props) {
-  const services = pages.filter((p) => p.type === "service" && p.status !== "archived");
-  const locations = pages.filter((p) => (p.type === "location" || p.type === "service_location") && p.status !== "archived");
-  const contact = pages.find((p) => p.type === "contact");
-  const about = pages.find((p) => p.type === "about");
-  const blog = pages.filter((p) => p.type === "blog");
+  const nav = siteNavigation(pages);
+  const { about, contact } = nav;
   const b = site.business;
   const href = (p: PageState) => `${linkPrefix}${pathForSlug(p.slug)}`;
   const firstIsHero = page.blocks[0]?.type === "hero";
@@ -37,7 +35,7 @@ export function SitePage({ site, pages, page, baseUrl, linkPrefix = "", banner }
         <div className="mx-auto flex max-w-6xl items-center justify-between gap-4 px-6 py-4">
           <Link href={linkPrefix || "/"} className="text-lg font-bold text-site-primary">{site.theme.logoText ?? b.name}</Link>
           <nav className="hidden items-center gap-6 text-sm font-medium text-slate-700 md:flex">
-            {services.slice(0, 5).map((p) => (
+            {nav.header.filter((p) => p.type === "service").map((p) => (
               <Link key={p.id} href={href(p)} className="hover:text-site-primary">{p.h1.length > 28 ? p.title.split("|")[0]!.trim() : p.h1}</Link>
             ))}
             {about && <Link href={href(about)} className="hover:text-site-primary">About</Link>}
@@ -73,9 +71,9 @@ export function SitePage({ site, pages, page, baseUrl, linkPrefix = "", banner }
             {b.email && <p className="mt-1 text-slate-600">{b.email}</p>}
             {b.hours && <p className="mt-1 text-slate-500">{b.hours}</p>}
           </div>
-          <FooterLinks title="Services" pages={services} href={href} />
-          <FooterLinks title="Areas we cover" pages={locations.slice(0, 12)} href={href} />
-          <FooterLinks title="Advice" pages={blog.slice(0, 8)} href={href} />
+          <FooterLinks title="Services" pages={nav.footer.services} href={href} />
+          <FooterLinks title="Areas we cover" pages={nav.footer.locations} href={href} />
+          <FooterLinks title="Advice" pages={nav.footer.blog} href={href} />
         </div>
         <p className="pb-8 text-center text-xs text-slate-400">© {new Date().getFullYear()} {b.name}</p>
       </footer>
