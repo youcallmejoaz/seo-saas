@@ -36,7 +36,7 @@ export function SitePage({ site, pages, page, baseUrl, linkPrefix = "", banner }
           <Link href={linkPrefix || "/"} className="text-lg font-bold text-site-primary">{site.theme.logoText ?? b.name}</Link>
           <nav className="hidden items-center gap-6 text-sm font-medium text-slate-700 md:flex">
             {nav.header.filter((p) => p.type === "service").map((p) => (
-              <Link key={p.id} href={href(p)} className="hover:text-site-primary">{p.h1.length > 28 ? p.title.split("|")[0]!.trim() : p.h1}</Link>
+              <Link key={p.id} href={href(p)} className="whitespace-nowrap hover:text-site-primary">{navLabel(p)}</Link>
             ))}
             {about && <Link href={href(about)} className="hover:text-site-primary">About</Link>}
             {contact && <Link href={href(contact)} className="hover:text-site-primary">Contact</Link>}
@@ -79,6 +79,12 @@ export function SitePage({ site, pages, page, baseUrl, linkPrefix = "", banner }
       </footer>
     </div>
   );
+}
+
+/** Short header label: "Boiler Repair in Birmingham" -> "Boiler Repair". */
+function navLabel(p: PageState) {
+  const short = p.h1.replace(/\s+(in|near|across)\s+.+$/i, "").trim();
+  return short.length >= 3 && short.length <= 28 ? short : p.title.split("|")[0]!.trim().slice(0, 28);
 }
 
 function FooterLinks({ title, pages, href }: { title: string; pages: PageState[]; href: (p: PageState) => string }) {

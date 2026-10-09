@@ -68,8 +68,8 @@ async function seedClient(agencyId: string, business: BusinessInfo, portalEmail:
   await db.from("sites").update({ theme: plan.theme }).eq("id", site.id);
 
   const portalUser = await user(portalEmail, `${business.name} owner`);
-  await db.from("client_users").upsert({ client_id: client.id, user_id: portalUser });
-  await db.from("subscriptions").insert({ client_id: client.id, status: "active", plan: "growth", mrr_cents: 49_900 });
+  must(await db.from("client_users").upsert({ client_id: client.id, user_id: portalUser }).select("user_id"), "client_users");
+  must(await db.from("subscriptions").insert({ client_id: client.id, status: "active", plan: "growth", mrr_cents: 49_900 }).select("id"), "subscription");
 
   // Keywords + 90 days of Search Console / GA4 data with a gentle trend.
   const kws = [...new Map(plan.pages.filter((p) => p.target_keyword).map((p) => [p.target_keyword.toLowerCase(), { kw: p.target_keyword.toLowerCase(), slug: p.slug }])).values()];
@@ -115,24 +115,27 @@ async function seedClient(agencyId: string, business: BusinessInfo, portalEmail:
     source: i % 3 === 0 ? "direct" : "organic",
     created_at: new Date(Date.now() - (i * 4 + 1) * 86_400_000).toISOString(),
   }));
-  await db.from("leads").insert(leads);
+  must(await db.from("leads").insert(leads).select("id"), "leads");
 
   // A finished campaign with measured results, a planned task and an item awaiting approval.
   const run = must(await db.from("runs").insert({ agency_id: agencyId, client_id: client.id, kind: "campaign_plan", prompt: `Improve rankings for ${kws[3]?.kw ?? kws[0]!.kw}`, status: "succeeded", started_at: new Date().toISOString(), finished_at: new Date().toISOString() }).select("id").single(), "run");
-  await db.from("run_events").insert([
+  must(await db.from("run_events").insert([
     { run_id: run.id, agency_id: agencyId, client_id: client.id, type: "step", message: "Researching keywords" },
     { run_id: run.id, agency_id: agencyId, client_id: client.id, type: "step", message: "Plan ready: 3 tasks" },
-  ]);
+  ]).select("id"), "run_events");
   const campaign = must(
     await db.from("campaigns").insert({ client_id: client.id, name: `Improve rankings for ${kws[3]?.kw ?? kws[0]!.kw}`, goal: `Improve rankings for ${kws[3]?.kw ?? kws[0]!.kw}`, target_keywords: [kws[3]?.kw ?? kws[0]!.kw], target_location: business.locations[0], status: "active", run_id: run.id, plan: { summary: "Quick on-page wins first, then deeper content and local pages.", insights: ["Main service pages rank on page two for their money terms."] } }).select("id").single(),
     "campaign",
   );
   const servicePage = pages.find((p) => p.type === "service")!;
-  await db.from("tasks").insert([
-    { client_id: client.id, campaign_id: campaign.id, kind: "meta_optimize", title: `Optimise title & meta on /${servicePage.slug}`, risk: "low", status: "done", completed_at: new Date(Date.now() - 30 * 86_400_000).toISOString(), measured_impact: { d14: { verdict: "improved", clicksChangePct: 18.4, positionChange: 1.6 }, d28: { verdict: "improved", clicksChangePct: 31.2, positionChange: 2.3 } } },
-    { client_id: client.id, campaign_id: campaign.id, kind: "internal_links", title: `Add internal links to /${servicePage.slug}`, risk: "low", status: "done", completed_at: new Date(Date.now() - 20 * 86_400_000).toISOString(), measured_impact: { d14: { verdict: "flat", clicksChangePct: 3.1, positionChange: 0.4 } } },
-    { client_id: client.id, campaign_id: campaign.id, kind: "content_expand", title: `Expand /${servicePage.slug} with an FAQ`, risk: "medium", status: "planned", scheduled_for: new Date(Date.now() + 2 * 86_400_000).toISOString() },
-  ]);
+  // Multi-row inserts send the union of keys (missing keys become NULL, not the column
+  // default), so every row spells out scheduled_for / completed_at / measured_impact.
+  const daysAgoIso = (n: number) => new Date(Date.now() - n * 86_400_000).toISOString();
+  must(await db.from("tasks").insert([
+    { client_id: client.id, campaign_id: campaign.id, kind: "meta_optimize", title: `Optimise title & meta on /${servicePage.slug}`, risk: "low", status: "done", scheduled_for: daysAgoIso(31), completed_at: daysAgoIso(30), measured_impact: { d14: { verdict: "improved", clicksChangePct: 18.4, positionChange: 1.6 }, d28: { verdict: "improved", clicksChangePct: 31.2, positionChange: 2.3 } } },
+    { client_id: client.id, campaign_id: campaign.id, kind: "internal_links", title: `Add internal links to /${servicePage.slug}`, risk: "low", status: "done", scheduled_for: daysAgoIso(21), completed_at: daysAgoIso(20), measured_impact: { d14: { verdict: "flat", clicksChangePct: 3.1, positionChange: 0.4 } } },
+    { client_id: client.id, campaign_id: campaign.id, kind: "content_expand", title: `Expand /${servicePage.slug} with an FAQ`, risk: "medium", status: "planned", scheduled_for: daysAgoIso(-2), completed_at: null, measured_impact: null },
+  ]).select("id"), "tasks");
   const location = business.locations.at(-1)!;
   const proposedOps = [
     {
@@ -149,16 +152,16 @@ async function seedClient(agencyId: string, business: BusinessInfo, portalEmail:
       },
     },
   ];
-  await db.from("change_sets").insert({ client_id: client.id, site_id: site.id, run_id: run.id, summary: `Create a ${business.services[0]} page for ${location}`, rationale: "Search Console shows impressions for this service in this area but no page targets it.\n\nNeeds approval: new page changes are not on the auto-apply list.", risk: "medium", status: "proposed", ops: proposedOps });
+  must(await db.from("change_sets").insert({ client_id: client.id, site_id: site.id, run_id: run.id, summary: `Create a page for ${business.services[0]?.toLowerCase()} in ${location}`, rationale: "Search Console shows impressions for this service in this area but no page targets it.\n\nNeeds approval: new page changes are not on the auto-apply list.", risk: "medium", status: "proposed", ops: proposedOps }).select("id"), "change_set");
 
   const lastMonth = new Date(Date.UTC(new Date().getUTCFullYear(), new Date().getUTCMonth() - 1, 1)).toISOString().slice(0, 10);
-  await db.from("reports").insert({
+  must(await db.from("reports").insert({
     client_id: client.id,
     period_start: lastMonth,
     period_end: new Date(Date.UTC(new Date().getUTCFullYear(), new Date().getUTCMonth(), 0)).toISOString().slice(0, 10),
     summary_md: `## Headlines\n- More people found you on Google than the month before.\n- Several of your key services moved up in the rankings.\n- You received new enquiries through the website.\n\n## What we did\n- Improved how your main service page appears in Google\n- Connected related pages together\n\n## What's next\n- Add helpful questions and answers to your service pages\n- Create a page for ${location}`,
     metrics: {},
-  });
+  }).select("id"), "report");
   return { client, site };
 }
 
@@ -170,9 +173,9 @@ async function main() {
     await db.from("agencies").delete().eq("id", existing.id);
   }
   const agency = must(await db.from("agencies").insert({ id: stableId("agency"), name: "Demo Agency", slug: "demo-agency", settings: { demo: true } }).select("id").single(), "agency");
-  await db.from("memberships").insert({ agency_id: agency.id, user_id: owner, role: "owner" });
+  must(await db.from("memberships").insert({ agency_id: agency.id, user_id: owner, role: "owner" }).select("user_id"), "owner membership");
   const staff = await user("staff@demo.test", "Demo Staff");
-  await db.from("memberships").insert({ agency_id: agency.id, user_id: staff, role: "member" });
+  must(await db.from("memberships").insert({ agency_id: agency.id, user_id: staff, role: "member" }).select("user_id"), "staff membership");
 
   const a = await seedClient(
     agency.id,

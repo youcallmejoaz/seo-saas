@@ -43,7 +43,7 @@ export function TimeSeriesChart({
             labelFormatter={(d) => String(d)}
             contentStyle={{ borderRadius: 8, borderColor: GRID, fontSize: 12 }}
           />
-          <Area type="monotone" dataKey={dataKey} stroke={SERIES} strokeWidth={2} fill={`url(#fill-${dataKey})`} dot={false} activeDot={{ r: 4, stroke: "#fff", strokeWidth: 2 }} connectNulls />
+          <Area isAnimationActive={false} type="monotone" dataKey={dataKey} stroke={SERIES} strokeWidth={2} fill={`url(#fill-${dataKey})`} dot={false} activeDot={{ r: 4, stroke: "#fff", strokeWidth: 2 }} connectNulls />
         </AreaChart>
       </ResponsiveContainer>
     </div>

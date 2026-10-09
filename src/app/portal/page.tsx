@@ -112,7 +112,7 @@ export default async function PortalPage({ searchParams }: { searchParams: Promi
         </Card>
         <Card>
           <CardHeader title="Recent enquiries" description="From the contact forms on your website." />
-          {leads?.length ? <LeadsTable leads={leads as Lead[]} /> : <CardBody><p className="text-sm text-slate-500">No enquiries yet.</p></CardBody>}
+          {leads?.length ? <LeadsTable leads={leads as Lead[]} compact /> : <CardBody><p className="text-sm text-slate-500">No enquiries yet.</p></CardBody>}
         </Card>
       </div>
     </div>
