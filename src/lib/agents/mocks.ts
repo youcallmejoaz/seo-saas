@@ -7,7 +7,8 @@ import { pathForSlug } from "@/lib/site/schema";
 import { slugify } from "@/lib/utils";
 import type { PagePlan, SitePlan } from "./site-builder";
 
-const lc = (s: string) => s.toLowerCase();
+// Lowercase for mid-sentence use, but keep acronyms such as EV, NICEIC or UPVC intact.
+const lc = (s: string) => s.replace(/\b\w+\b/g, (w) => (/^[A-Z0-9]{2,}$/.test(w) ? w : w.toLowerCase()));
 const title = (s: string) => s.replace(/\b\w/g, (c) => c.toUpperCase());
 
 export function mockSitePlan(b: BusinessInfo, maxCombos: number): SitePlan {
@@ -77,7 +78,7 @@ export function mockSitePlan(b: BusinessInfo, maxCombos: number): SitePlan {
 }
 
 function paragraphs(b: BusinessInfo, topic: string, place: string, n: number): string[] {
-  const usp = b.usp?.length ? b.usp.join(", ").toLowerCase() : "clear pricing, tidy work and friendly, qualified staff";
+  const usp = b.usp?.length ? lc(b.usp.join(", ")) : "clear pricing, tidy work and friendly, qualified staff";
   const bank = [
     `${b.name} provides ${lc(topic)} for homes and businesses in ${place}. Every job starts with a clear explanation of what needs doing and a written quote, so you know exactly where you stand before any work begins.`,
     `Customers choose us for ${usp}. We turn up when we say we will, protect your property while we work, and leave everything clean and tidy when the job is done.`,

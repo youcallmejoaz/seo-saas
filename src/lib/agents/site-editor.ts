@@ -44,7 +44,7 @@ export async function runSiteEditAgent(log: RunLogger, input: { site: Site; clie
               name: "propose_changes",
               args: {
                 summary: `Tighten title and meta description on /${target.slug}`,
-                rationale: `Mock edit for instruction: ${input.instruction}`,
+                rationale: `Requested by the agency: ${input.instruction}`,
                 ops: [{ op: "set_meta", page: target.slug, title: meta.title, meta_description: meta.meta_description }],
               },
             },

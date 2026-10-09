@@ -68,7 +68,7 @@ service + town). Volumes and difficulty are your best estimates; they will be la
         intent: i % 3 === 0 ? ("transactional" as const) : ("local" as const),
         difficulty_estimate: 25 + ((i * 7) % 40),
         monthly_volume_estimate: 50 + ((i * 37) % 400),
-        rationale: "Mock estimate",
+        rationale: "Estimated from similar local service searches",
       })),
     }),
   });

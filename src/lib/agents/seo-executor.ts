@@ -158,7 +158,7 @@ function mockExecutor(task: Task, site: Site, pages: PageState[]): MockAgent {
     if (step === 1) {
       const ops = mockOpsFor(task, site, pages);
       if (!ops.length) return { text: "No change needed: the page already covers this." };
-      return { toolCalls: [{ name: "propose_changes", args: { summary: task.title, rationale: `Mock execution of ${task.kind}. ${lintSite(pages).length} lint findings on site.`, ops } }] };
+      return { toolCalls: [{ name: "propose_changes", args: { summary: task.title, rationale: `${KIND_GUIDE[task.kind]?.split(".")[0] ?? "Planned campaign task"}. The site currently has ${lintSite(pages).length} on-page findings.`, ops } }] };
     }
     return { text: `Completed: ${task.title}` };
   };

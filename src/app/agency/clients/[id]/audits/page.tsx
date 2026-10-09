@@ -25,8 +25,17 @@ export default async function AuditsPage({ params }: { params: Promise<{ id: str
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
             <Stat label="Audit score" value={latest.score ?? "—"} hint={`${new Date(latest.started_at).toLocaleString("en-GB")} · ${latest.status}`} />
             <Stat label="Pages crawled" value={latest.pages_crawled} />
-            <Stat label="Mobile performance" value={psi?.performance ?? "—"} hint={psi?.lcpMs ? `LCP ${(psi.lcpMs / 1000).toFixed(1)}s` : "PageSpeed runs on public URLs"} />
-            <Stat label="Lighthouse SEO" value={psi?.seo ?? "—"} />
+            {psi ? (
+              <>
+                <Stat label="Mobile performance" value={psi.performance ?? "—"} hint={psi.lcpMs ? `LCP ${(psi.lcpMs / 1000).toFixed(1)}s` : undefined} />
+                <Stat label="Lighthouse SEO" value={psi.seo ?? "—"} />
+              </>
+            ) : (
+              <>
+                <Stat label="Critical issues" value={(issues ?? []).filter((i) => i.severity === "critical").length} hint="PageSpeed runs once the site is on a public URL" />
+                <Stat label="Auto-fixable" value={(issues ?? []).filter((i) => i.auto_fixable).length} hint="Fixed by the AI under the client's policy" />
+              </>
+            )}
           </div>
           <Card>
             <CardHeader title={`Findings (${issues?.length ?? 0})`} />

@@ -148,7 +148,7 @@ async function seedClient(agencyId: string, business: BusinessInfo, portalEmail:
         meta_description: `Need ${business.services[0]?.toLowerCase()} in ${location}? ${business.name} offers fast, local help. Call today for a free quote.`.slice(0, 160),
         h1: `${business.services[0]} in ${location}`,
         target_keyword: `${business.services[0]?.toLowerCase()} ${location.toLowerCase()}`,
-        blocks: contents.get(plan.pages.find((p) => p.type === "location")!.slug)!,
+        blocks: contents.get((plan.pages.find((p) => p.type === "location" && p.location === location) ?? plan.pages.find((p) => p.type === "location"))!.slug)!,
       },
     },
   ];

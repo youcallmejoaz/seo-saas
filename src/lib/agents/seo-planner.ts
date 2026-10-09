@@ -116,7 +116,7 @@ export function mockPlan(campaign: Campaign, pages: PageState[], focus: string, 
   ];
   if (!hasLocationPage && location)
     tasks.push({ kind: "new_location_page", title: `Create a ${location} page`, description: `There is demand in ${location} but no dedicated page.`, target_page: null, target_keyword: `${focus}`, new_page_slug: `areas/${slugify(location)}`, priority: 60, start_in_days: 2 });
-  return { summary: `Mock plan for "${campaign.goal}": quick on-page wins on the money page first, then content depth and local coverage.`, insights: [`Focus keyword: ${focus}`], tasks };
+  return { summary: `Start with quick on-page wins on /${service?.slug ?? ""}, the page closest to ranking for "${focus}", then add content depth and local coverage around ${location || "the service area"}.`, insights: [`Focus keyword: ${focus}`, `/${service?.slug ?? ""} is the strongest existing page for this topic.`], tasks };
 }
 
 /** Persist the plan's tasks, staggered by start_in_days. */

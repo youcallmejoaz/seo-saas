@@ -4,6 +4,7 @@ import { useRouter } from "next/navigation";
 import { createBrowserSupabase } from "@/lib/supabase/browser";
 import type { RunEvent, RunStatus } from "@/lib/db/types";
 import { cn } from "@/lib/utils";
+import { Markdown } from "@/components/markdown";
 
 const TERMINAL: RunStatus[] = ["succeeded", "failed", "cancelled", "awaiting_approval"];
 
@@ -47,7 +48,7 @@ export function RunLog({ runId, initialEvents, initialStatus }: { runId: string;
             <div className="flex items-start justify-between gap-3">
               <span className={cn("font-medium", e.level === "error" ? "text-red-700" : e.level === "warn" ? "text-amber-700" : e.type === "message" ? "text-slate-900" : "text-slate-700")}>
                 <span className="mr-2 rounded bg-white px-1.5 py-0.5 font-mono text-[10px] uppercase text-slate-500 ring-1 ring-slate-200">{e.type.replace("_", " ")}</span>
-                {e.message}
+                {e.type === "message" ? <Markdown md={e.message} className="mt-1 text-slate-900" /> : e.message}
               </span>
               <time className="shrink-0 text-xs text-slate-400">{new Date(e.ts).toLocaleTimeString("en-GB")}</time>
             </div>

@@ -10,6 +10,10 @@ A multi-tenant SaaS for agencies:
 
 Stack: **Next.js 15 · Supabase (Postgres + Auth + RLS) · Google Gemini (behind a swappable provider) · Inngest (durable jobs) · Tailwind**.
 
+![RankPilot walkthrough: onboard a client, AI builds the site, publish, approve an AI change, ask the AI](portfolio/video/rankpilot-demo-720.gif)
+
+More screenshots and an MP4 version are in [`portfolio/`](portfolio/README.md).
+
 See [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md) for the design, trade-offs, scaling notes and roadmap.
 
 ---
